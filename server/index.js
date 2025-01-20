@@ -9,10 +9,11 @@ const io = new SocketServer(server);
 io.on("connect", (socket) => {
   console.log("a client!");
 
-  socket.on("chat message", (msg) => {
-    console.log("message received", msg);
+  socket.on("message", (data) => {
+    socket.broadcast.emit("message", data);
+    console.log(data);
   });
 });
 
 server.listen(3000);
-console.log("server on http://localhost:3000");
+console.log("server on http://localhost:3000/");

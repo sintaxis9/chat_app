@@ -1,17 +1,23 @@
 import io from "socket.io-client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const socket = io("/");
 
 function App() {
   const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log(message);
-    socket.emit("chat message", message);
-    setMessage("");
+    socket.emit("message", message);
   };
+
+  useEffect(() => {
+    socket.on("message", (message) => {
+      console.log(message);
+      setMessages([...messages, message]);
+    });
+  }, []);
 
   return (
     <div>
@@ -23,6 +29,12 @@ function App() {
         />
         <button type="submit"> send </button>
       </form>
+
+      <ul>
+        {messages.map((message) => (
+          <li>{message}</li>
+        ))}
+      </ul>
     </div>
   );
 }
