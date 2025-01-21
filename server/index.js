@@ -1,19 +1,29 @@
 import express from "express";
 import http from "http";
-import { Socket, Server as SocketServer } from "socket.io";
+import { Server as SocketServer } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
-const io = new SocketServer(server);
+const io = new SocketServer(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 io.on("connect", (socket) => {
-  console.log("a client!");
+  console.log("Un cliente se ha conectado!");
 
   socket.on("message", (data) => {
+    console.log("Mensaje recibido:", data);
     socket.broadcast.emit("message", data);
-    console.log(data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Un cliente se ha desconectado!");
   });
 });
 
-server.listen(3000);
-console.log("server on http://localhost:3000/");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});

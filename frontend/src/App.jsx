@@ -9,14 +9,23 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (message.trim() === "") return;
+    setMessages((prevMessages) => [...prevMessages, message]);
     socket.emit("message", message);
+    setMessage("");
   };
 
   useEffect(() => {
-    socket.on("message", (message) => {
+    const handleMessage = (message) => {
       console.log(message);
-      setMessages([...messages, message]);
-    });
+      setMessages((prevMessages) => [...prevMessages, message]);
+    };
+
+    socket.on("message", handleMessage);
+
+    return () => {
+      socket.off("message", handleMessage);
+    };
   }, []);
 
   return (
@@ -31,8 +40,8 @@ function App() {
       </form>
 
       <ul>
-        {messages.map((message) => (
-          <li>{message}</li>
+        {messages.map((message, index) => (
+          <li key={index}>{message}</li>
         ))}
       </ul>
     </div>
