@@ -8,8 +8,14 @@ function App() {
   const [username, setUsername] = useState("");
 
   useEffect(() => {
-    const name = prompt("enter ur username:");
-    setUsername(name || "anon");
+    const savedUsername = localStorage.getItem("username");
+    if (!savedUsername) {
+      const name = prompt("enter ur username:");
+      setUsername(name || "anon");
+      localStorage.setItem("username", name || "anon");
+    } else {
+      setUsername(savedUsername);
+    }
   }, []);
 
   const handleSubmit = (e) => {
@@ -19,6 +25,7 @@ function App() {
     const newMessage = {
       body: message,
       from: username || "anon",
+      id: Date.now(),
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
