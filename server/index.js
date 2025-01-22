@@ -11,19 +11,20 @@ const io = new SocketServer(server, {
 });
 
 io.on("connect", (socket) => {
-  console.log("Un cliente se ha conectado!");
+  console.log("A Client!");
 
   socket.on("message", (data) => {
-    console.log("Mensaje recibido:", data);
+    if (!data.body || data.body.trim() === "") return;
+    console.log(`${data.from}: ${data.body}`);
     socket.broadcast.emit("message", data);
   });
 
   socket.on("disconnect", () => {
-    console.log("Un cliente se ha desconectado!");
+    console.log("a client die!");
   });
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });

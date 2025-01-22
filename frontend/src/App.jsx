@@ -1,24 +1,34 @@
 import io from "socket.io-client";
 import { useState, useEffect } from "react";
-
-const socket = io("/");
+const socket = io("http://localhost:3000");
 
 function App() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    const name = prompt("enter ur username:");
+    setUsername(name || "anon");
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message.trim() === "") return;
-    setMessages((prevMessages) => [...prevMessages, message]);
-    socket.emit("message", message);
+
+    const newMessage = {
+      body: message,
+      from: username || "anon",
+    };
+
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    socket.emit("message", newMessage);
     setMessage("");
   };
 
   useEffect(() => {
-    const handleMessage = (message) => {
-      console.log(message);
-      setMessages((prevMessages) => [...prevMessages, message]);
+    const handleMessage = (newMessage) => {
+      setMessages((prevMessages) => [...prevMessages, newMessage]);
     };
 
     socket.on("message", handleMessage);
@@ -33,18 +43,28 @@ function App() {
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="write"
+          placeholder="write a message..."
+          value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
-        <button type="submit"> send </button>
+        <button type="submit">Send</button>
       </form>
 
       <ul>
-        {messages.map((message, index) => (
-          <li key={index}>{message}</li>
+        {messages.map((msg, index) => (
+          <li
+            key={index}
+            style={{
+              textAlign: msg.from === username ? "right" : "left",
+              color: msg.from === username ? "blue" : "red",
+            }}
+          >
+            <strong>{msg.from}:</strong> {msg.body}
+          </li>
         ))}
       </ul>
     </div>
   );
 }
+
 export default App;
