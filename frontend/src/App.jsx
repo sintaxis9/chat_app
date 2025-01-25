@@ -35,7 +35,12 @@ function App() {
 
   useEffect(() => {
     const handleMessage = (newMessage) => {
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      setMessages((prevMessages) => {
+        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+          return prevMessages;
+        }
+        return [...prevMessages, newMessage];
+      });
     };
 
     socket.on("message", handleMessage);
