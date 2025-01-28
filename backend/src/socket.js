@@ -1,18 +1,31 @@
+import { pool } from "./app.js";
+
 export const setupSocket = (io) => {
   io.on("connect", (socket) => {
     console.log("a client!");
 
-    socket.on("message", (data) => {
-      if (!data || typeof data.body !== "string" || data.from) {
+    socket.on("message", async (data) => {
+      if (!data || typeof data.body !== "string" || !data.from) {
         console.error("invalid message data:", data);
         return;
       }
       console.log(`${data.from}: ${data.body}`);
+
+      try {
+        const result = await pool.query(
+          "INSERT INTO messages (usuario_id, data) VALUES ($1, $2) RETURNING *",
+          [data.from, data.body],
+        );
+        console.log("Message saved:", result.rows[0]);
+      } catch (err) {
+        console.error("Error saving message:", err);
+      }
+
       socket.broadcast.emit("message", data);
     });
 
     socket.on("disconnect", () => {
-      console.log("a client die");
+      console.log("a client disconnected");
     });
   });
 };
