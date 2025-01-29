@@ -4,7 +4,6 @@ import morgan from "morgan";
 import bcrypt from "bcryptjs";
 import pkg from "pg";
 const { Pool } = pkg;
-
 const app = express();
 
 app.use(cors({ origin: "*" }));
@@ -80,6 +79,16 @@ app.post("/messages/send", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "send message error" });
+  }
+});
+
+app.get("/messages", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM messages ORDER BY id ASC");
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "messages error" });
   }
 });
 

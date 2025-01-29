@@ -16,6 +16,25 @@ function App() {
       setUsername(savedUsername);
       setIsLoggedIn(true);
     }
+
+    const loadMessages = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/messages");
+        const data = await response.json();
+        setMessages(data);
+      } catch (err) {
+        console.error("Error al cargar mensajes:", err);
+      }
+    };
+    loadMessages();
+
+    socket.on("message", (msg) => {
+      setMessages((prevMessages) => [...prevMessages, msg]);
+    });
+
+    return () => {
+      socket.off("message");
+    };
   }, []);
 
   const handleLogin = async (e) => {
@@ -56,6 +75,17 @@ function App() {
     setMessages((prevMessages) => [...prevMessages, newMessage]);
     socket.emit("message", newMessage);
     setMessage("");
+
+    fetch("http://localhost:3000/messages/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_id: username,
+        data: message,
+      }),
+    }).catch((err) => console.error("error al enviar mensaje:", err));
   };
 
   const handleLogout = () => {
@@ -93,7 +123,7 @@ function App() {
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Write a message..."
+          placeholder="write a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />
