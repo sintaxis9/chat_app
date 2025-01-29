@@ -5,7 +5,10 @@ import { setupSocket } from "./src/socket.js";
 
 const server = http.createServer(app);
 const io = new SocketServer(server, {
-  cors: { origin: "*" },
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    methods: ["GET", "POST"],
+  },
 });
 
 setupSocket(io);

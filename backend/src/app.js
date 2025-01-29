@@ -11,10 +11,10 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 const pool = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "chat_app_db",
-  password: "postgres",
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "db",
+  database: process.env.DB_NAME || "chat_app_db",
+  password: process.env.DB_PASSWORD || "postgres",
   port: 5432,
 });
 

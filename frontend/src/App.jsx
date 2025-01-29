@@ -9,11 +9,14 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("username");
-    if (savedUsername) {
+    const savedUserId = localStorage.getItem("userId");
+    if (savedUsername && savedUserId) {
       setUsername(savedUsername);
+      setUserId(savedUserId);
       setIsLoggedIn(true);
     }
 
@@ -51,7 +54,9 @@ function App() {
       const data = await response.json();
       if (response.status === 200) {
         setUsername(data.user.name);
+        setUserId(data.user.id);
         localStorage.setItem("username", data.user.name);
+        localStorage.setItem("userId", data.user.id);
         setIsLoggedIn(true);
       } else {
         alert("invalid credentials");
@@ -68,8 +73,9 @@ function App() {
 
     const newMessage = {
       body: message,
-      from: username || "anon",
+      from: username,
       id: Date.now(),
+      user_id: userId,
     };
 
     setMessages((prevMessages) => [...prevMessages, newMessage]);
@@ -82,7 +88,7 @@ function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        user_id: username,
+        user_id: userId,
         data: message,
       }),
     }).catch((err) => console.error("error al enviar mensaje:", err));
@@ -91,6 +97,7 @@ function App() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     localStorage.removeItem("username");
+    localStorage.removeItem("userId");
   };
 
   if (!isLoggedIn) {
