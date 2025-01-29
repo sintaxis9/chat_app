@@ -1,7 +1,6 @@
-version: "3.9"
 services:
   db:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres-container
     environment:
       POSTGRES_USER: postgres
@@ -13,6 +12,11 @@ services:
       - ./.pgdata:/var/lib/postgresql/data
     networks:
       - chat-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend
@@ -24,7 +28,8 @@ services:
       DB_PASSWORD: postgres
       DB_NAME: chat_app_db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - chat-network
 
