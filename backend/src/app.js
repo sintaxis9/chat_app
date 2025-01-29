@@ -39,31 +39,56 @@ app.post("/users/register", async (req, res) => {
 });
 
 app.post("/users/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, name } = req.body;
+  console.log("data received:", { email, password, name });
 
   try {
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
-      email,
-    ]);
+    console.log("searching user...");
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email],
+    );
 
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: "invalid credentials" });
+    if (userResult.rows.length > 0) {
+      console.log("user find: ", userResult.rows[0]);
+      const user = userResult.rows[0];
+      console.log("compairing passwds");
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        console.log("wrong passwd");
+        return res.status(401).json({ error: "invalid credentials" });
+      }
+      res.json({
+        message: "login successful",
+        user: { id: user.id, name: user.name, email: user.email },
+      });
+    } else {
+      console.log("new user...");
+
+      if (!name) {
+        console.log("needs a name");
+        return res.status(400).json({ error: "username required" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const newUser = await pool.query(
+        "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
+        [name, email, hashedPassword],
+      );
+
+      res.status(201).json({
+        message: "user created",
+        user: {
+          id: newUser.rows[0].id,
+          name: newUser.rows[0].name,
+          email: newUser.rows[0].email,
+        },
+      });
     }
-
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ error: "invalid credentials" });
-    }
-
-    res.status(200).json({
-      message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email },
-    });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "login error" });
+    console.error("critical error", error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -89,6 +114,20 @@ app.get("/messages", async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "messages error" });
+  }
+});
+
+app.get("/users/check", async (req, res) => {
+  const { email } = req.query;
+  try {
+    const result = await pool.query(
+      "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1",
+      [email],
+    );
+    res.json({ exists: result.rows[0].exists });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "server error" });
   }
 });
 
