@@ -13,12 +13,12 @@ export const setupSocket = (io) => {
 
       try {
         const result = await pool.query(
-          "INSERT INTO messages (usuario_id, data) VALUES ($1, $2) RETURNING *",
+          "INSERT INTO messages (user_id, data) VALUES ($1, $2) RETURNING *",
           [data.from, data.body],
         );
-        console.log("Message saved:", result.rows[0]);
+        console.log("message saved:", result.rows[0]);
       } catch (err) {
-        console.error("Error saving message:", err);
+        console.error("error saving message:", err);
       }
 
       socket.broadcast.emit("message", data);

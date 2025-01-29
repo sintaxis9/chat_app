@@ -6,17 +6,42 @@ function App() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const savedUsername = localStorage.getItem("username");
-    if (!savedUsername) {
-      const name = prompt("enter ur username:");
-      setUsername(name || "anon");
-      localStorage.setItem("username", name || "anon");
-    } else {
+    if (savedUsername) {
       setUsername(savedUsername);
+      setIsLoggedIn(true);
     }
   }, []);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:3000/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+      if (response.status === 200) {
+        setUsername(data.user.name);
+        localStorage.setItem("username", data.user.name);
+        setIsLoggedIn(true);
+      } else {
+        alert("invalid credentials");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("error logging in");
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -33,29 +58,42 @@ function App() {
     setMessage("");
   };
 
-  useEffect(() => {
-    const handleMessage = (newMessage) => {
-      setMessages((prevMessages) => {
-        if (prevMessages.some((msg) => msg.id === newMessage.id)) {
-          return prevMessages;
-        }
-        return [...prevMessages, newMessage];
-      });
-    };
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem("username");
+  };
 
-    socket.on("message", handleMessage);
-
-    return () => {
-      socket.off("message", handleMessage);
-    };
-  }, []);
+  if (!isLoggedIn) {
+    return (
+      <div>
+        <h2>Login</h2>
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div>
+      <h2>Welcome, {username}!</h2>
+      <button onClick={handleLogout}>Logout</button>
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="write a message..."
+          placeholder="Write a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
         />

@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
-import { Pool } from "pg";
+import bcrypt from "bcryptjs";
+import pkg from "pg";
+const { Pool } = pkg;
 
 const app = express();
 
@@ -22,17 +24,47 @@ app.get("/", (req, res) => {
 });
 
 app.post("/users/register", async (req, res) => {
-  const { name, email } = req.body;
+  const { name, email, password } = req.body;
 
   try {
+    const hashedPassword = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
-      [name, email],
+      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
+      [name, email, hashedPassword],
     );
-    res.status(201).json(result.rows[0]);
+    res.status(201).json({ message: "user registered" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "user register error" });
+  }
+});
+
+app.post("/users/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE email = $1", [
+      email,
+    ]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "invalid credentials" });
+    }
+
+    const user = result.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "invalid credentials" });
+    }
+
+    res.status(200).json({
+      message: "Login successful",
+      user: { id: user.id, name: user.name, email: user.email },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "login error" });
   }
 });
 
@@ -51,4 +83,5 @@ app.post("/messages/send", async (req, res) => {
   }
 });
 
+export { pool };
 export default app;
