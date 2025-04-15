@@ -2,9 +2,14 @@ import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 import bcrypt from "bcryptjs";
+import userRoutes from "./routes/userRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 import pkg from "pg";
 const { Pool } = pkg;
 const app = express();
+
+import { dotenv } from "dotenv";
+dotenv.config();
 
 app.use(cors({ origin: "*" }));
 app.use(morgan("dev"));
@@ -18,9 +23,10 @@ const pool = new Pool({
   port: 5432,
 });
 
-app.get("/", (req, res) => {
-  res.send("server working");
-});
+app.get("/", (req, res) => res.send("server working"));
+
+app.use("/users", userRoutes);
+app.use("/messages", messageRoutes);
 
 app.post("/users/register", async (req, res) => {
   const { name, email, password } = req.body;
@@ -45,7 +51,7 @@ app.post("/users/login", async (req, res) => {
   try {
     console.log("searching user...");
     const userResult = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
+      "SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
       [email],
     );
 
